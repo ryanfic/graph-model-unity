@@ -438,7 +438,7 @@ GameObject:
   - component: {fileID: 912441961}
   - component: {fileID: 912441960}
   m_Layer: 0
-  m_Name: Tester
+  m_Name: Graph Loader
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -456,6 +456,51 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 83ed1c0d5fc4c4c4cb74cf8b28525959, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  LatitudeBound: {x: 0.48, y: 0.5266555}
+  LongitudeBound: {x: 0.4830313, y: 0.53}
+  ObjectScale: 1
+  PositionScale: 10000
+  nodeVisuals:
+    junction:
+      enabled: 1
+      scale: 1.5
+      offsetY: 0
+      color: {r: 0.3333333, g: 0.3333333, b: 0.3333333, a: 0}
+    tree:
+      enabled: 1
+      scale: 0.4
+      offsetY: 0
+      color: {r: 0.12600636, g: 1, b: 0, a: 0}
+    business:
+      enabled: 0
+      scale: 1
+      offsetY: 0
+      color: {r: 1, g: 0.6015389, b: 0, a: 0}
+    store:
+      enabled: 0
+      scale: 1
+      offsetY: 0
+      color: {r: 0.6226415, g: 0.30843434, b: 0, a: 0}
+    transit:
+      enabled: 0
+      scale: 1
+      offsetY: 0
+      color: {r: 0, g: 0.20770907, b: 1, a: 0}
+    rapidTransit:
+      enabled: 0
+      scale: 1
+      offsetY: 0
+      color: {r: 0, g: 0.6483879, b: 1, a: 0}
+    crime:
+      enabled: 0
+      scale: 1
+      offsetY: 0
+      color: {r: 1, g: 0.07939433, b: 0, a: 0}
+    school:
+      enabled: 0
+      scale: 1
+      offsetY: 0
+      color: {r: 0.89492226, g: 0, b: 1, a: 0}
 --- !u!4 &912441961
 Transform:
   m_ObjectHideFlags: 0

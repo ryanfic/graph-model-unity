@@ -1,7 +1,9 @@
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Threading.Tasks;
 using Neo4j.Driver;
+using UnityEngine;
 
 public class GraphLoader : IDisposable
 {
@@ -10,30 +12,29 @@ public class GraphLoader : IDisposable
     public GraphLoader(string uri, string user, string password)
     {
         _driver = GraphDatabase.Driver(uri, AuthTokens.Basic(user, password));
-        CheckConn();
     }
 
-    async void CheckConn()
+    public async Task<List<T>> GetNodes<T>(LatLngBounds bounds) where T : GraphNode<T>, new()
     {
-        await _driver.VerifyConnectivityAsync();
-    }
-
-    public async Task<List<int>> Test()
-    {
+        string tableName = GraphNode<T>.GetTableName();
         await using IAsyncSession session = _driver.AsyncSession();
         return await session.ExecuteReadAsync(
-            async tx =>
-            {
-                List<int> ids = new List<int>();
+            async tx => {
                 var reader = await tx.RunAsync(
-                    "Match (j:Junction) LIMIT 10 RETURN j.id");
-
-                while (await reader.FetchAsync())
-                {
-                    ids.Add(int.Parse(reader.Current[0].ToString()));
-                }
-
-                return ids;
+                    $"MATCH (n : {tableName}) " +
+                    $"WHERE (n.latitude >= $latMin) AND (n.latitude <= $latMax)" +
+                    $"  AND (n.longitude >= $lngMin) AND (n.longitude <= $lngMax)" +
+                    $"RETURN n",
+                    new
+                    {
+                        latMin = bounds.LatMin,
+                        latMax = bounds.LatMax,
+                        lngMin = bounds.LngMin,
+                        lngMax = bounds.LngMax
+                    }
+                );
+                var records = await reader.ToListAsync();
+                return records.Select(x => GraphNode<T>.FromINode(x["n"].As<INode>())).ToList();
             });
     }
 
@@ -41,4 +42,10 @@ public class GraphLoader : IDisposable
     {
         _driver?.Dispose();
     }
+}
+
+public struct LatLngBounds
+{
+    public float LatMin, LatMax;
+    public float LngMin, LngMax;
 }
