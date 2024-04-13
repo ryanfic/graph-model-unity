@@ -29,6 +29,8 @@ public class GraphVisualizer : MonoBehaviour
     Transform graphParent;
     LatLngBounds b;
 
+    string database_password = "password";
+
     // Start is called before the first frame update
     void Start()
     {
@@ -66,7 +68,7 @@ public class GraphVisualizer : MonoBehaviour
 
     private async Task LoadNodes<T>(NodeVisual visual) where T : GraphNode<T>, new()
     {
-        GraphLoader loader = new GraphLoader("bolt://localhost:7687", "neo4j", "something");
+        GraphLoader loader = new GraphLoader("bolt://localhost:7687", "neo4j", database_password);
         List<T> results = await loader.GetNodes<T>(b);
         CreateResultObjects(results, visual);
     }

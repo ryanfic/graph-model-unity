@@ -438,7 +438,7 @@ GameObject:
   - component: {fileID: 912441961}
   - component: {fileID: 912441960}
   m_Layer: 0
-  m_Name: Graph Loader
+  m_Name: GraphVisualizer
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
