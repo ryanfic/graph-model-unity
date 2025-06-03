@@ -36,7 +36,61 @@ public class GraphLoader : IDisposable
                 var records = await reader.ToListAsync();
                 return records.Select(x => GraphNode<T>.FromINode(x["n"].As<INode>())).ToList();
             });
+
     }
+
+    public async Task<int> GetTotalCount<T>() where T : GraphNode<T>, new()
+    {
+        string label = typeof(T).Name;
+        string query = $"MATCH (n:{label}) RETURN count(n)";
+
+        using var session = _driver.AsyncSession();
+        var result = await session.RunAsync(query);
+        var record = await result.SingleAsync();
+        return record[0].As<int>();
+    }
+
+    public async Task<List<RapidTransitLine>> LoadTransitLinesWithPoints()
+    {
+        await using var session = _driver.AsyncSession();
+
+        return await session.ExecuteReadAsync(async tx =>
+        {
+            var query = @"
+            MATCH (l:TransitLine)-[:HAS_POINT]->(p:GeoPoint)
+            RETURN l.name AS name, collect(p { .latitude, .longitude }) AS points
+        ";
+
+            var result = await tx.RunAsync(query);
+            var records = await result.ToListAsync();
+
+            var lines = new List<RapidTransitLine>();
+
+            foreach (var record in records)
+            {
+                var name = record["name"].As<string>();
+                var points = record["points"].As<List<IDictionary<string, object>>>();
+
+                var geoPoints = new List<Vector3>();
+                foreach (var point in points)
+                {
+                    float lat = Convert.ToSingle(point["latitude"]);
+                    float lon = Convert.ToSingle(point["longitude"]);
+                    geoPoints.Add(new Vector3(lat, 0,  lon));
+                }
+
+                lines.Add(new RapidTransitLine
+                {
+                    lineName = name,
+                    geoPoints = geoPoints
+                });
+            }
+
+            return lines;
+        });
+    }
+
+
 
     public void Dispose()
     {
@@ -48,4 +102,9 @@ public struct LatLngBounds
 {
     public float LatMin, LatMax;
     public float LngMin, LngMax;
+
+    public override string ToString()
+    {
+        return $"Lat min / max: {{ {LatMin} , {LatMax} }} \nLng min / max: {{ {LngMin} , {LngMax} }}";
+    }
 }

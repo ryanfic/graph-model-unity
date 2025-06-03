@@ -4,6 +4,8 @@ using GD.MinMaxSlider;
 using System.Threading.Tasks;
 using System;
 using Unity.VisualScripting.Antlr3.Runtime.Tree;
+using UnityEngine.Rendering;
+using System.Runtime.CompilerServices;
 
 public class GraphVisualizer : MonoBehaviour
 {
@@ -20,6 +22,11 @@ public class GraphVisualizer : MonoBehaviour
     [SerializeField]
     NodeVisuals nodeVisuals;
 
+    [SerializeField]
+    Mesh instanceMesh;
+    [SerializeField]
+    Material instanceMaterial;
+
     // Bounds of Vancouver
     float graph_lat_min = 49.20089037f;
     float graph_lat_max = 49.29449928f;
@@ -29,31 +36,101 @@ public class GraphVisualizer : MonoBehaviour
     Transform graphParent;
     LatLngBounds b;
 
-    string database_password = "password";
+    string database_password = "AjSpeed22!!";
+
+    List<NodeBatch> batches = new();
+    public bool GraphLoaded { get; private set; }
 
     // Start is called before the first frame update
     void Start()
     {
+        LoadPreferences();
         ReloadGraph();
+    }
+
+    private void Update()
+    {
+        if (Input.GetKeyDown(KeyCode.S))
+        {
+            SavePreferences();
+        }
+
+        if (GraphLoaded)
+        {
+            RenderBatches();
+        }
+    }
+
+    private void RenderBatches()
+    {
+        foreach (var batch in batches)
+        {
+            int total = batch.matrices.Length;
+            const int instanceLimit = 100000;
+
+            MaterialPropertyBlock props = new();
+            props.SetVectorArray("_Color", batch.colors);
+
+            for (int i = 0; i < total; i += instanceLimit)
+            {
+                int count = Mathf.Min(instanceLimit, total - i);
+                Graphics.DrawMeshInstanced(batch.mesh, 0, batch.material, batch.matrices, count, props, UnityEngine.Rendering.ShadowCastingMode.Off, false, 0, null, UnityEngine.Rendering.LightProbeUsage.Off);
+            }
+        }
+    }
+
+    private void SavePreferences()
+    {
+        Debug.Log("Saving Preferences");
+        PlayerPrefs.SetFloat("LatitudeMin", LatitudeBound.x);
+        PlayerPrefs.SetFloat("LatitudeMax", LatitudeBound.y);
+
+        PlayerPrefs.SetFloat("LongitudeMin", LongitudeBound.x);
+        PlayerPrefs.SetFloat("LongitudeMax", LongitudeBound.y);
+
+        PlayerPrefs.SetFloat("ObjectScale", ObjectScale);
+    }
+
+    private void LoadPreferences()
+    {
+        Debug.Log("Loading Preferences");
+
+        float latMin = PlayerPrefs.GetFloat("LatitudeMin", 0.48f);
+        float latMax = PlayerPrefs.GetFloat("LatitudeMax", 0.53f);
+        LatitudeBound = new Vector2(latMin, latMax);
+
+        float lonMin = PlayerPrefs.GetFloat("LongitudeMin", 0.48f);
+        float lonMax = PlayerPrefs.GetFloat("LongitudeMax", 0.53f);
+        LongitudeBound = new Vector2(lonMin, lonMax);
+
+        UpdateLatLngBounds();
+
+        ObjectScale = PlayerPrefs.GetFloat("ObjectScale", 1f);
     }
 
     public async void ReloadGraph()
     {
+        GraphLoaded = false;
+        batches.Clear();
         if (graphParent != null) Destroy(graphParent.gameObject);
 
         graphParent = new GameObject("Graph").transform;
 
         UpdateLatLngBounds();
 
-        if (nodeVisuals.junction.enabled) await LoadNodes<Junction>(nodeVisuals.junction);
-        if (nodeVisuals.tree.enabled) await LoadNodes<Tree>(nodeVisuals.tree);
-        if (nodeVisuals.business.enabled) await LoadNodes<Business>(nodeVisuals.business);
-        if (nodeVisuals.store.enabled) await LoadNodes<Store>(nodeVisuals.store);
-        if (nodeVisuals.transit.enabled) await LoadNodes<Transit>(nodeVisuals.transit);
-        if (nodeVisuals.rapidTransit.enabled) await LoadNodes<RapidTransit>(nodeVisuals.rapidTransit);
-        if (nodeVisuals.crime.enabled) await LoadNodes<Crime>(nodeVisuals.crime);
-        if (nodeVisuals.school.enabled) await LoadNodes<School>(nodeVisuals.school);
+        if (nodeVisuals.junction.enabled) await LoadAndCreateNodeRepresentations<Junction>(nodeVisuals.junction);
+        if (nodeVisuals.tree.enabled) await LoadAndCreateNodeRepresentations<Tree>(nodeVisuals.tree);
+        if (nodeVisuals.business.enabled) await LoadAndCreateNodeRepresentations<Business>(nodeVisuals.business);
+        if (nodeVisuals.store.enabled) await LoadAndCreateNodeRepresentations<Store>(nodeVisuals.store);
+        if (nodeVisuals.transit.enabled) await LoadAndCreateNodeRepresentations<Transit>(nodeVisuals.transit);
+        if (nodeVisuals.rapidTransit.enabled)
+        {
+            await LoadAndCreateNodeRepresentations<RapidTransit>(nodeVisuals.rapidTransit);         
+        }
+        if (nodeVisuals.crime.enabled) await LoadAndCreateNodeRepresentations<Crime>(nodeVisuals.crime);
+        if (nodeVisuals.school.enabled) await LoadAndCreateNodeRepresentations<School>(nodeVisuals.school);
 
+        GraphLoaded = true;
     }
 
     private void UpdateLatLngBounds()
@@ -64,33 +141,64 @@ public class GraphVisualizer : MonoBehaviour
         b.LatMax = graph_lat_min + graph_lat_range * LatitudeBound.y;
         b.LngMin = graph_lng_min + graph_lng_range * LongitudeBound.x;
         b.LngMax = graph_lng_min + graph_lng_range * LongitudeBound.y;
+
+        print(b);
     }
 
-    private async Task LoadNodes<T>(NodeVisual visual) where T : GraphNode<T>, new()
+    private async Task LoadAndCreateNodeRepresentations<T>(NodeVisual visual) where T : GraphNode<T>, new()
     {
         GraphLoader loader = new GraphLoader("bolt://localhost:7687", "neo4j", database_password);
         List<T> results = await loader.GetNodes<T>(b);
+        int expected = await loader.GetTotalCount<T>();
+        Debug.Log($"For type {typeof(T)} Expected: {expected}, got: {results.Count}");
+        Debug.Log($"Loaded {results.Count} nodes of type {typeof(T)}");
+
         CreateResultObjects(results, visual);
     }
 
     private void CreateResultObjects<T>(List<T> nodes, NodeVisual visual) where T : GraphNode<T>, new() 
     {
-        float lat_range = b.LatMax - b.LatMin;
-        float lng_range = b.LngMax - b.LngMin;
-
+        List<Matrix4x4> matrices = new();
+        List<Vector4> colors = new();
 
         foreach (T t in nodes)
         {
-            GameObject g = GameObject.CreatePrimitive(PrimitiveType.Cube);
-            g.transform.SetParent(graphParent);
-            g.transform.position = new Vector3(
-                t.longitude - b.LngMin - lng_range / 2,
-                visual.offsetY / PositionScale,
-                t.latitude - b.LatMin - lat_range / 2
-            ) * PositionScale;
-            g.transform.localScale = Vector3.one * ObjectScale * visual.scale;
-            g.GetComponent<Renderer>().material.color = visual.color;
+            Vector3 position = ConvertLatLonToWorld(t.latitude, t.longitude);
+            Vector3 scale = Vector3.one * ObjectScale * visual.scale;
+            Matrix4x4 trs = Matrix4x4.TRS(position, Quaternion.identity, scale);
+
+            matrices.Add(trs);
+            colors.Add((Vector4)visual.color); // includes alpha
         }
+
+        if (matrices.Count > 0)
+        {
+            NodeBatch batch = new()
+            {
+                mesh = instanceMesh,
+                material = instanceMaterial,
+                matrices = matrices.ToArray(),
+                colors = colors.ToArray()
+            };
+
+            batches.Add(batch);
+        }
+    }
+
+    public Vector3 ConvertLatLonToWorld(float latitude, float longitude)
+    {
+        float lat_range = b.LatMax - b.LatMin;
+        float lng_range = b.LngMax - b.LngMin;
+        return new Vector3(
+                longitude - b.LngMin - lng_range / 2,
+                0,
+                latitude - b.LatMin - lat_range / 2
+            ) * PositionScale;
+    }
+
+    public LatLngBounds GetCurrentLatLonBounds()
+    {
+        return b;
     }
 }
 
@@ -114,4 +222,13 @@ public struct NodeVisual
     public float scale;
     public float offsetY;
     public Color color;
+}
+
+[Serializable]
+struct NodeBatch
+{
+    public Mesh mesh;
+    public Material material;
+    public Matrix4x4[] matrices;
+    public Vector4[] colors; // use Vector4 for color with alpha
 }

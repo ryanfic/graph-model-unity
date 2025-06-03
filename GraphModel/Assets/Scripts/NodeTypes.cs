@@ -1,4 +1,5 @@
 using Neo4j.Driver;
+using System.Collections.Generic;
 using UnityEngine;
 
 public abstract class GraphNode<T> where T : GraphNode<T>, new()
@@ -55,10 +56,31 @@ public class Business : GraphNode<Business> { }
 
 public class Crime : GraphNode<Crime> { }
 
-public class RapidTransit : GraphNode<RapidTransit> { }
+public class RapidTransit : GraphNode<RapidTransit> 
+{
+    public string stationName;
+
+    protected override void InitializeFromINode(INode record)
+    {
+        base.InitializeFromINode(record);
+        stationName = record["name"].As<string>();
+    }
+}
 
 public class School : GraphNode<School> { }
 
 public class Store : GraphNode<Store> { }
 
 public class Transit : GraphNode<Transit> { }
+
+public class RapidTransitLine : GraphNode<RapidTransitLine>
+{
+    public string lineName;
+    public List<Vector3> geoPoints = new List<Vector3>();
+
+    protected override void InitializeFromINode(INode record)
+    {
+        base.InitializeFromINode(record);
+        lineName = record["name"].As<string>();
+    }
+}

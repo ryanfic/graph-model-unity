@@ -13,7 +13,7 @@ OcclusionCullingSettings:
 --- !u!104 &2
 RenderSettings:
   m_ObjectHideFlags: 0
-  serializedVersion: 9
+  serializedVersion: 10
   m_Fog: 0
   m_FogColor: {r: 0.5, g: 0.5, b: 0.5, a: 1}
   m_FogMode: 3
@@ -38,13 +38,12 @@ RenderSettings:
   m_ReflectionIntensity: 1
   m_CustomReflection: {fileID: 0}
   m_Sun: {fileID: 0}
-  m_IndirectSpecularColor: {r: 0.18028378, g: 0.22571412, b: 0.30692285, a: 1}
   m_UseRadianceAmbientProbe: 0
 --- !u!157 &3
 LightmapSettings:
   m_ObjectHideFlags: 0
-  serializedVersion: 12
-  m_GIWorkflowMode: 1
+  serializedVersion: 13
+  m_BakeOnSceneLoad: 0
   m_GISettings:
     serializedVersion: 2
     m_BounceScale: 1
@@ -67,9 +66,6 @@ LightmapSettings:
     m_LightmapParameters: {fileID: 0}
     m_LightmapsBakeMode: 1
     m_TextureCompression: 1
-    m_FinalGather: 0
-    m_FinalGatherFiltering: 1
-    m_FinalGatherRayCount: 256
     m_ReflectionCompression: 2
     m_MixedBakeMode: 2
     m_BakeBackend: 1
@@ -97,7 +93,7 @@ LightmapSettings:
     m_ExportTrainingData: 0
     m_TrainingDataDestination: TrainingData
     m_LightProbeSampleCountMultiplier: 4
-  m_LightingDataAsset: {fileID: 0}
+  m_LightingDataAsset: {fileID: 20201, guid: 0000000000000000f000000000000000, type: 0}
   m_LightingSettings: {fileID: 0}
 --- !u!196 &4
 NavMeshSettings:
@@ -123,6 +119,56 @@ NavMeshSettings:
     debug:
       m_Flags: 0
   m_NavMeshData: {fileID: 0}
+--- !u!1 &179427737
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 179427738}
+  - component: {fileID: 179427739}
+  m_Layer: 0
+  m_Name: Skytrain Loader
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &179427738
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 179427737}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 0}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &179427739
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 179427737}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: a2bb5ab089f94534298b3c31219f0bf8, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  skytrainLines: []
+  stationScale: 10
+  skytrainStationPrefab: {fileID: 5795353504553419941, guid: 84af93cc374213247a3aed5a0a72ecd3,
+    type: 3}
+  skytrainLinePrefab: {fileID: 3339634358308736114, guid: ef792e19182e8334cb04506ff1ab5de9,
+    type: 3}
 --- !u!1 &330585543
 GameObject:
   m_ObjectHideFlags: 0
@@ -135,6 +181,7 @@ GameObject:
   - component: {fileID: 330585545}
   - component: {fileID: 330585544}
   - component: {fileID: 330585547}
+  - component: {fileID: 330585548}
   m_Layer: 0
   m_Name: Main Camera
   m_TagString: MainCamera
@@ -160,7 +207,7 @@ Camera:
   m_Enabled: 1
   serializedVersion: 2
   m_ClearFlags: 1
-  m_BackGroundColor: {r: 0.19215687, g: 0.3019608, b: 0.4745098, a: 0}
+  m_BackGroundColor: {r: 0, g: 0, b: 0, a: 1}
   m_projectionMatrixMode: 1
   m_GateFitMode: 2
   m_FOVAxisMode: 0
@@ -182,7 +229,7 @@ Camera:
     width: 1
     height: 1
   near clip plane: 0.3
-  far clip plane: 1000
+  far clip plane: 10000
   field of view: 60
   orthographic: 0
   orthographic size: 5
@@ -254,12 +301,27 @@ MonoBehaviour:
   m_RequiresColorTexture: 0
   m_Version: 2
   m_TaaSettings:
-    quality: 3
-    frameInfluence: 0.1
-    jitterScale: 1
-    mipBias: 0
-    varianceClampScale: 0.9
-    contrastAdaptiveSharpening: 0
+    m_Quality: 3
+    m_FrameInfluence: 0.1
+    m_JitterScale: 1
+    m_MipBias: 0
+    m_VarianceClampScale: 0.9
+    m_ContrastAdaptiveSharpening: 0
+--- !u!114 &330585548
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 330585543}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 175611c632b09744db78b73f31336ea8, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  moveSpeed: 10
+  verticalSpeed: 5
+  lookSensitivity: 0.1
 --- !u!1 &410087039
 GameObject:
   m_ObjectHideFlags: 0
@@ -286,9 +348,8 @@ Light:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 410087039}
   m_Enabled: 1
-  serializedVersion: 10
+  serializedVersion: 11
   m_Type: 1
-  m_Shape: 0
   m_Color: {r: 1, g: 1, b: 1, a: 1}
   m_Intensity: 2
   m_Range: 10
@@ -338,8 +399,12 @@ Light:
   m_BoundingSphereOverride: {x: 0, y: 0, z: 0, w: 0}
   m_UseBoundingSphereOverride: 0
   m_UseViewFrustumForShadowCasterCull: 1
+  m_ForceVisible: 0
   m_ShadowRadius: 0
   m_ShadowAngle: 0
+  m_LightUnit: 1
+  m_LuxAtDistance: 1
+  m_EnableSpotReflector: 1
 --- !u!4 &410087041
 Transform:
   m_ObjectHideFlags: 0
@@ -456,18 +521,18 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 83ed1c0d5fc4c4c4cb74cf8b28525959, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  LatitudeBound: {x: 0.48, y: 0.5266555}
-  LongitudeBound: {x: 0.4830313, y: 0.53}
+  LatitudeBound: {x: 0, y: 1}
+  LongitudeBound: {x: 0, y: 1}
   ObjectScale: 1
   PositionScale: 10000
   nodeVisuals:
     junction:
-      enabled: 1
+      enabled: 0
       scale: 1.5
       offsetY: 0
-      color: {r: 0.3333333, g: 0.3333333, b: 0.3333333, a: 0}
+      color: {r: 0, g: 1, b: 0, a: 1}
     tree:
-      enabled: 1
+      enabled: 0
       scale: 0.4
       offsetY: 0
       color: {r: 0.12600636, g: 1, b: 0, a: 0}
@@ -475,32 +540,34 @@ MonoBehaviour:
       enabled: 0
       scale: 1
       offsetY: 0
-      color: {r: 1, g: 0.6015389, b: 0, a: 0}
+      color: {r: 1, g: 0.6015389, b: 0, a: 1}
     store:
       enabled: 0
       scale: 1
       offsetY: 0
-      color: {r: 0.6226415, g: 0.30843434, b: 0, a: 0}
+      color: {r: 0.6226415, g: 0.30843434, b: 0, a: 1}
     transit:
       enabled: 0
       scale: 1
       offsetY: 0
-      color: {r: 0, g: 0.20770907, b: 1, a: 0}
+      color: {r: 0, g: 0.20770907, b: 1, a: 1}
     rapidTransit:
       enabled: 0
       scale: 1
       offsetY: 0
-      color: {r: 0, g: 0.6483879, b: 1, a: 0}
+      color: {r: 0, g: 0.6483879, b: 1, a: 1}
     crime:
       enabled: 0
       scale: 1
       offsetY: 0
-      color: {r: 1, g: 0.07939433, b: 0, a: 0}
+      color: {r: 1, g: 0.07939433, b: 0, a: 1}
     school:
       enabled: 0
       scale: 1
       offsetY: 0
-      color: {r: 0.89492226, g: 0, b: 1, a: 0}
+      color: {r: 0.89492226, g: 0, b: 1, a: 1}
+  instanceMesh: {fileID: 10202, guid: 0000000000000000e000000000000000, type: 0}
+  instanceMaterial: {fileID: 2100000, guid: 958f3076c66e0d6448d0b8294b2d2d21, type: 2}
 --- !u!4 &912441961
 Transform:
   m_ObjectHideFlags: 0
@@ -524,3 +591,4 @@ SceneRoots:
   - {fileID: 410087041}
   - {fileID: 832575519}
   - {fileID: 912441961}
+  - {fileID: 179427738}
