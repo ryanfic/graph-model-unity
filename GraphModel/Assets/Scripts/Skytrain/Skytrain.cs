@@ -44,28 +44,78 @@ public class Skytrain : MonoBehaviour
     public void InitializeSkytrain(SkytrainLine line, string name, Vector3 initialPosition, Func<float, float, Vector3> convertLatLonToWorld)
     {
         this.line = line;
-        this.positions = line.shape;
-
         transform.parent = line.gameObject.transform;
         gameObject.name = name;
         transform.position = initialPosition;
 
-        this.stationIndices = GetStationIndices(convertLatLonToWorld);
-        
+        this.positions = new List<Vector3>(line.shape);
+        this.stationIndices = new HashSet<int>();
+        this.stationIndexToName = new Dictionary<int, string>();
+
+        var stationList = StationDatabase.GetLinesFromStation(line.lineName);
+        var pendingInserts = new List<(int index, string name, Vector3 position)>();
+
+        foreach (var station in stationList)
+        {
+            Vector3 stationWorldPos = convertLatLonToWorld(station.Latitude, station.Longitude);
+
+            int bestIndex = -1;
+            float bestDist = float.MaxValue;
+
+            for (int i = 0; i < positions.Count - 1; i++)
+            {
+                Vector3 a = positions[i];
+                Vector3 b = positions[i + 1];
+                Vector3 ab = b - a;
+                Vector3 ap = stationWorldPos - a;
+
+                float t = Mathf.Clamp01(Vector3.Dot(ap, ab) / ab.sqrMagnitude);
+                Vector3 projected = a + t * ab;
+                float dist = Vector3.Distance(projected, stationWorldPos);
+
+                if (dist < bestDist)
+                {
+                    bestDist = dist;
+                    bestIndex = i + 1;
+                }
+            }
+
+            if (bestIndex != -1)
+            {
+                pendingInserts.Add((bestIndex, station.Name, stationWorldPos));
+            }
+        }
+
+        pendingInserts.Sort((a, b) => a.index.CompareTo(b.index));
+
+        int offset = 0;
+        foreach (var (index, n, pos) in pendingInserts)
+        {
+            int insertIndex = index + offset;
+            positions.Insert(insertIndex, pos);
+            stationIndices.Add(insertIndex);
+            stationIndexToName[insertIndex] = n;
+            offset++;
+        }
     }
+
 
 
     private void Update()
     {
         MoveAlongLine();
     }
+
+    /// <summary>
+    /// Handles the movement and interaction between skytrains and the stations.
+    /// </summary>
     private void MoveAlongLine()
     {
         if (positions == null || positions.Count < 2) return;
 
         Vector3 currentPos = transform.position;
         Vector3 nextPos = positions[currentPositionIndex + 1];
-        Vector3 targetPos = new Vector3(nextPos.x, 0f, nextPos.z);
+        Vector3 targetPos = new Vector3(nextPos.x, 0.2f, nextPos.z);
         float distanceToTarget = Vector3.Distance(currentPos, targetPos);
 
         // Advance to next point if close enough and not a station
@@ -80,24 +130,15 @@ public class Skytrain : MonoBehaviour
             case SkytrainState.Stopped:
                 if (!hasTransferredPassengers && stationIndexToName.TryGetValue(currentPositionIndex+1, out string stationName))
                 {
-                    hasTransferredPassengers = true;
-                    print("transfering passengers");
-                    foreach (var (k, v) in line.stations)
-                    {
-                        print($"{k}");
-                    }
-                    print(stationName);
-                    SkytrainStation station = line.stations[stationName];
-                    var passengersOff = UnloadPassengers(5);
-                    if (station != null)
-                        station.IncreasePassengers(passengersOff);
-                    
+                    HandleStationStop(stationName);
                 }
+
                 stopTimer -= Time.deltaTime;
                 if (stopTimer <= 0f)
                 {
                     currentState = SkytrainState.Accelerating;
                     currentPositionIndex++;
+                    hasTransferredPassengers = false;
                 }
                 return;
 
@@ -124,7 +165,7 @@ public class Skytrain : MonoBehaviour
                 break;
 
             case SkytrainState.Decelerating:
-                var d = deceleration * (NextStationIndex() == currentPositionIndex + 1 ? 1 : 0.95f);
+                var d = deceleration /** (NextStationIndex() == currentPositionIndex + 1 ? 1 : 0.95f)*/;
                 currentSpeed -= d * Time.deltaTime;
                 if (currentSpeed <= 0f)
                 {
@@ -144,11 +185,37 @@ public class Skytrain : MonoBehaviour
                 break;
         }
 
+        // position
         transform.position = Vector3.MoveTowards(
             currentPos,
             targetPos,
             currentSpeed * Time.deltaTime
         );
+
+        // rotation
+        Vector3 direction = (targetPos - currentPos).normalized;
+        if (direction != Vector3.zero)
+        {
+            Quaternion targetRotation = Quaternion.LookRotation(direction, Vector3.up);
+            transform.rotation = Quaternion.Slerp(transform.rotation, targetRotation, Time.deltaTime * 5f);
+        }
+
+    }
+
+    /// <summary>
+    /// Currently a placeholder for more complex things
+    /// </summary>
+    private void HandleStationStop(string stationName)
+    {
+        hasTransferredPassengers = true;
+        SkytrainStation station = line.stations[stationName];
+
+        UnloadPassengers(5);
+
+        if (station != null)
+            station.IncreasePassengers(5);
+        else
+            print("station is null");
     }
 
 

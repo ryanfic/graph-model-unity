@@ -163,6 +163,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: a2bb5ab089f94534298b3c31219f0bf8, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  skytrainStations: []
   skytrainLines: []
   stationScale: 10
   skytrainStationPrefab: {fileID: 5795353504553419941, guid: 84af93cc374213247a3aed5a0a72ecd3,
@@ -527,7 +528,7 @@ MonoBehaviour:
   PositionScale: 10000
   nodeVisuals:
     junction:
-      enabled: 0
+      enabled: 1
       scale: 1.5
       offsetY: 0
       color: {r: 0, g: 1, b: 0, a: 1}

@@ -19,6 +19,7 @@ public class SkytrainStation : MonoBehaviour
     public void InitializeStation(string name, float lat, float lon, GameObject gameObjectRepresentation)
     {
         this.name = name;
+        this.stationName = name;
         this.lat = lat;
         this.lon = lon;
         this.gameObjectRepresentation = gameObjectRepresentation;

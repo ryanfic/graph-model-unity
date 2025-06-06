@@ -81,7 +81,6 @@ public class GraphVisualizer : MonoBehaviour
 
     private void SavePreferences()
     {
-        Debug.Log("Saving Preferences");
         PlayerPrefs.SetFloat("LatitudeMin", LatitudeBound.x);
         PlayerPrefs.SetFloat("LatitudeMax", LatitudeBound.y);
 
@@ -93,8 +92,6 @@ public class GraphVisualizer : MonoBehaviour
 
     private void LoadPreferences()
     {
-        Debug.Log("Loading Preferences");
-
         float latMin = PlayerPrefs.GetFloat("LatitudeMin", 0.48f);
         float latMax = PlayerPrefs.GetFloat("LatitudeMax", 0.53f);
         LatitudeBound = new Vector2(latMin, latMax);
@@ -141,8 +138,6 @@ public class GraphVisualizer : MonoBehaviour
         b.LatMax = graph_lat_min + graph_lat_range * LatitudeBound.y;
         b.LngMin = graph_lng_min + graph_lng_range * LongitudeBound.x;
         b.LngMax = graph_lng_min + graph_lng_range * LongitudeBound.y;
-
-        print(b);
     }
 
     private async Task LoadAndCreateNodeRepresentations<T>(NodeVisual visual) where T : GraphNode<T>, new()

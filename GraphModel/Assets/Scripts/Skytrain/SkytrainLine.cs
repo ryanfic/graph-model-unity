@@ -41,6 +41,13 @@ public class SkytrainLine : MonoBehaviour
         }
     }
 
-
+    private void OnDrawGizmos()
+    {
+        foreach (var pos in shape)
+        {
+            Gizmos.color = Color.grey;
+            Gizmos.DrawSphere(pos, 0.2f);
+        }
+    }
 
 }

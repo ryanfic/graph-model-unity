@@ -76,14 +76,13 @@ public class SkytrainLoader : MonoBehaviour
             worldRepresentation.transform.parent = transform;
 
             SkytrainStation station = worldRepresentation.GetComponent<SkytrainStation>();
+            
             station.InitializeStation(
                 originalRepresentation.stationName,
                 originalRepresentation.latitude,
                 originalRepresentation.longitude,
                 worldRepresentation
             );
-
-
 
             skytrainStations.Add(station);
         }
@@ -98,14 +97,16 @@ public class SkytrainLoader : MonoBehaviour
             skytrainLine.gameObject.name = line.lineName;
             var skytrainLineScript = skytrainLine.GetComponent<SkytrainLine>();
             var renderer = skytrainLine.GetComponent<LineRenderer>();
-            var positions = line.geoPoints
-                .Select(p => graphVisualizer.ConvertLatLonToWorld(p.x, p.z))  // Assuming lat = x, lon = z
-                .ToArray();
+            var positionsList = line.geoPoints.Select(p => graphVisualizer.ConvertLatLonToWorld(p.x, p.z)).ToList(); // Assuming lat = x, lon = z 
+            
+            // this inst working the best yet. dont sort if you just want to see vancouver
+            // will need to make tis better to incorporate multiple cities
+            var positions = SortPointsGreedy(positionsList).ToArray(); 
 
             renderer.positionCount = positions.Length;
             renderer.SetPositions(positions);
             renderer.startWidth = renderer.endWidth = 2f;
-            renderer.material = new Material(Shader.Find("Sprites/Default"));  // Or whatever you're using
+            renderer.material = new Material(Shader.Find("Sprites/Default")); 
             renderer.startColor = renderer.endColor = SkytrainLineColors[line.lineName];
 
             skytrainLine.transform.parent = transform;
@@ -116,13 +117,15 @@ public class SkytrainLoader : MonoBehaviour
 
             foreach (var data in stationDatas)
             {
-                stations[data.Name] = skytrainStations.FirstOrDefault(s => s.stationName == data.Name);
+                var matchedStation = skytrainStations.FirstOrDefault(s => s.stationName == data.Name);
+                stations[data.Name] = matchedStation;
             }
+
 
             skytrainLineScript.InitializeLine(
                 line.lineName,
                 SkytrainLineColors[line.lineName],
-                positions.ToList(),
+                positionsList,
                 renderer,
                 graphVisualizer,
                 stations
@@ -131,6 +134,76 @@ public class SkytrainLoader : MonoBehaviour
             skytrainLines.Add(skytrainLineScript);
 
         }
+    }
+
+    public static List<Vector3> SortPointsGreedy(List<Vector3> points)
+    {
+        if (points == null || points.Count <= 1)
+            return new List<Vector3>(points);
+
+        const float anglePenaltyWeight = 0.02f;
+        const float maxSqrDistance = 100000f; // increase if your points are farther apart
+
+        List<Vector3> sorted = new();
+        HashSet<int> visited = new();
+
+        // Start at southeast-most point (min z, then min x)
+        int startIndex = 0;
+        for (int i = 1; i < points.Count; i++)
+        {
+            if (points[i].z < points[startIndex].z ||
+                (Mathf.Approximately(points[i].z, points[startIndex].z) && points[i].x < points[startIndex].x))
+            {
+                startIndex = i;
+            }
+        }
+
+        sorted.Add(points[startIndex]);
+        visited.Add(startIndex);
+
+        while (visited.Count < points.Count)
+        {
+            Vector3 current = sorted[^1];
+
+            float bestScore = float.MaxValue;
+            int bestIndex = -1;
+
+            Vector3 lastDir = sorted.Count >= 2
+                ? (sorted[^1] - sorted[^2]).normalized
+                : Vector3.zero;
+
+            for (int i = 0; i < points.Count; i++)
+            {
+                if (visited.Contains(i)) continue;
+
+                Vector3 candidate = points[i];
+                float dist = Vector3.SqrMagnitude(candidate - current);
+                if (dist > maxSqrDistance) continue;
+
+                float anglePenalty = 0f;
+                if (lastDir != Vector3.zero && (candidate - current).sqrMagnitude > 0.001f)
+                {
+                    Vector3 dir = (candidate - current).normalized;
+                    float angle = Vector3.Angle(lastDir, dir);
+                    anglePenalty = angle * anglePenaltyWeight;
+                }
+
+                float score = dist + anglePenalty;
+                if (score < bestScore)
+                {
+                    bestScore = score;
+                    bestIndex = i;
+                }
+            }
+
+            if (bestIndex == -1)
+                break; // disconnected points?
+
+            sorted.Add(points[bestIndex]);
+            visited.Add(bestIndex);
+        }
+
+        return sorted;
     }
 
     /// <summary>
