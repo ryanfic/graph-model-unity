@@ -1,3 +1,5 @@
+using System.Collections;
+using System.Linq;
 using UnityEngine;
 
 public class SkytrainSystemManager : MonoBehaviour
@@ -8,16 +10,30 @@ public class SkytrainSystemManager : MonoBehaviour
     [Header("Prefabs")]
     [SerializeField] private GameObject skytrainPrefab;
 
+    private float t = 0;
 
+    private float oringialThreshold = 5f;
+    private float currrentThreshold;
     private void Awake()
     {
-        
+        currrentThreshold = oringialThreshold;
     }
 
     public void Initialize(SerializableGraph graph)
     {
         this.graph = graph;
         CreateSkytrains();
+    }
+
+    private void Update()
+    {
+        t += Time.deltaTime;
+
+        if (t < 200 && t > currrentThreshold)
+        {
+            CreateSkytrains();
+            currrentThreshold += oringialThreshold;
+        }
     }
 
 
@@ -27,7 +43,6 @@ public class SkytrainSystemManager : MonoBehaviour
         {
             foreach (var route in line.routes)
             {
-                print(route.routeId);
                 GameObject skytrain = Instantiate(skytrainPrefab);
                 GraphSkytrain skytrainScript = skytrain.GetComponent<GraphSkytrain>();
                 skytrainScript.InitializeSkytrain(line, route.routeId);

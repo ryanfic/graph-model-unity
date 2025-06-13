@@ -38,7 +38,7 @@ public static class StationDatabase
         }
     }
 
-    public static List<StationData> GetLinesFromStation(string lineName)
+    public static List<StationData> GetStationsFromLine(string lineName)
     {
         switch (lineName)
         {

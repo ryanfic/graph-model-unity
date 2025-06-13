@@ -53,7 +53,7 @@ public class Skytrain : MonoBehaviour
         this.stationIndices = new HashSet<int>();
         this.stationIndexToName = new Dictionary<int, string>();
 
-        var stationList = StationDatabase.GetLinesFromStation(line.lineName);
+        var stationList = StationDatabase.GetStationsFromLine(line.lineName);
         var pendingInserts = new List<(int index, string name, Vector3 position)>();
 
         foreach (var station in stationList)
@@ -253,7 +253,7 @@ public class Skytrain : MonoBehaviour
         HashSet<int> stationIndices = new();
         stationIndexToName = new();
 
-        foreach (var station in StationDatabase.GetLinesFromStation(line.lineName))
+        foreach (var station in StationDatabase.GetStationsFromLine(line.lineName))
         {
             Vector3 worldPos = convertLatLonToWorld(station.Latitude, station.Longitude);
             int closestIndex = -1;

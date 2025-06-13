@@ -138,7 +138,7 @@ public class SkytrainLoader : MonoBehaviour
 
             skytrainLine.transform.parent = transform;
 
-            var stationDatas = StationDatabase.GetLinesFromStation(line.lineName);
+            var stationDatas = StationDatabase.GetStationsFromLine(line.lineName);
 
             Dictionary<string, SkytrainStation> stations = new();
 

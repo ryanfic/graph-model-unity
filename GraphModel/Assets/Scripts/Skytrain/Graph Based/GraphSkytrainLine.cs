@@ -40,22 +40,5 @@ public class GraphSkytrainLine : MonoBehaviour
             nodes.Add(nodeScript);
         }
 
-        if (lineName == "Canada Line")
-            InitializeSkytrains(1);
-    }
-
-    public void InitializeSkytrains(int count)
-    {
-        for (int i = 0; i < count; i++)
-        {
-            var skytrain = Instantiate(SkytrainPrefab);
-            var skytrainScript = skytrain.GetComponent<Skytrain>();
-            /*skytrainScript.InitializeSkytrain(
-                this,
-                $"Skytrain {i}",
-                nodes[i].gameObject.transform.position,
-                graphVisualizer.ConvertLatLonToWorld
-                );*/
-        }
     }
 }
