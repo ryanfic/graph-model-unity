@@ -57,9 +57,9 @@ public class GraphLoader : IDisposable
         return await session.ExecuteReadAsync(async tx =>
         {
             var query = @"
-            MATCH (l:TransitLine)-[:HAS_POINT]->(p:GeoPoint)
+            MATCH (l:RapidTransitLine)-[:HAS_POINT]->(p:GeoPoint)
             RETURN l.name AS name, collect(p { .latitude, .longitude }) AS points
-        ";
+            ";
 
             var result = await tx.RunAsync(query);
             var records = await result.ToListAsync();
@@ -70,7 +70,7 @@ public class GraphLoader : IDisposable
             {
                 var name = record["name"].As<string>();
                 var points = record["points"].As<List<IDictionary<string, object>>>();
-
+                //points.Sort((a, b) => ((int)a["idx"]).CompareTo((int)b["idx"]));
                 var geoPoints = new List<Vector3>();
                 foreach (var point in points)
                 {

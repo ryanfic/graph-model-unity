@@ -1,9 +1,11 @@
-using System;
 using System.Collections.Generic;
-using Unity.VisualScripting;
+using System;
 using UnityEngine;
+using System.Linq;
+using JetBrains.Annotations;
+using Unity.VisualScripting;
 
-public class Skytrain : MonoBehaviour
+public class GraphSkytrain : MonoBehaviour
 {
     [Header("Skytrain Movement Settings")]
     public float maxSpeed = 20f;
@@ -18,13 +20,13 @@ public class Skytrain : MonoBehaviour
     private Vector2 currentPosition;
     private Vector2 nextPosition;
     private float distanceToNext;
-    private List<Vector3> positions;
+    private List<Vector3> route;
 
     private HashSet<int> stationIndices = new();
     private Dictionary<int, string> stationIndexToName = new();
     private bool hasTransferredPassengers;
 
-    public SkytrainLine line;
+    public GraphSkytrainLine line;
 
 
     private int passengerCount = 200;
@@ -41,7 +43,7 @@ public class Skytrain : MonoBehaviour
     }
 
 
-    public void InitializeSkytrain(SkytrainLine line, string name, Vector3 initialPosition, Func<float, float, Vector3> convertLatLonToWorld)
+    public void InitializeSkytrain(GraphSkytrainLine line, string name, Vector3 initialPosition, Func<float, float, Vector3> convertLatLonToWorld)
     {
         print("initializing skytrain");
         this.line = line;
@@ -49,7 +51,7 @@ public class Skytrain : MonoBehaviour
         gameObject.name = name;
         transform.position = initialPosition;
 
-        this.positions = new List<Vector3>(line.points);
+        this.route = new List<Vector3>(line.nodes.Select(n => n.position).ToList());
         this.stationIndices = new HashSet<int>();
         this.stationIndexToName = new Dictionary<int, string>();
 
@@ -63,10 +65,10 @@ public class Skytrain : MonoBehaviour
             int bestIndex = -1;
             float bestDist = float.MaxValue;
 
-            for (int i = 0; i < positions.Count - 1; i++)
+            for (int i = 0; i < route.Count - 1; i++)
             {
-                Vector3 a = positions[i];
-                Vector3 b = positions[i + 1];
+                Vector3 a = route[i];
+                Vector3 b = route[i + 1];
                 Vector3 ab = b - a;
                 Vector3 ap = stationWorldPos - a;
 
@@ -93,11 +95,18 @@ public class Skytrain : MonoBehaviour
         foreach (var (index, n, pos) in pendingInserts)
         {
             int insertIndex = index + offset;
-            positions.Insert(insertIndex, pos);
+            route.Insert(insertIndex, pos);
             stationIndices.Add(insertIndex);
             stationIndexToName[insertIndex] = n;
             offset++;
         }
+    }
+
+    public void InitializeSkytrain(SerializableLine line, int routeId)
+    {
+        this.route = new List<Vector3>(line.nodes.Where(n => n.routeIds.Contains(routeId)).ToList().Select(n => n.position));
+        transform.position = route[0];
+        InitializeStations(line.lineName);
     }
 
 
@@ -107,15 +116,72 @@ public class Skytrain : MonoBehaviour
         MoveAlongLine();
     }
 
+    private void InitializeStations(string lineName)
+    {
+        this.stationIndices = new HashSet<int>();
+        this.stationIndexToName = new Dictionary<int, string>();
+
+        var stationList = StationDatabase.GetLinesFromStation(lineName);
+        var pendingInserts = new List<(int index, string name, Vector3 position)>();
+
+        foreach (var station in stationList)
+        {
+            Vector3 stationWorldPos = GraphVisualizer.ConvertLatLonToWorldStatic(station.Latitude, station.Longitude);
+            print(stationWorldPos);
+            int bestIndex = -1;
+            float bestDist = float.MaxValue;
+            Vector3 bestProjected = Vector3.zero;
+
+            for (int i = 0; i < route.Count - 1; i++)
+            {
+                Vector3 a = route[i];
+                Vector3 b = route[i + 1];
+                Vector3 ab = b - a;
+                Vector3 ap = stationWorldPos - a;
+
+                float t = Mathf.Clamp01(Vector3.Dot(ap, ab) / ab.sqrMagnitude);
+                Vector3 projected = a + t * ab;
+
+                float dist = Vector3.Distance(projected, stationWorldPos);
+
+                if (dist < bestDist)
+                {
+                    bestDist = dist;
+                    bestIndex = i + 1;
+                    bestProjected = projected;
+                }
+            }
+
+            if (bestIndex != -1)
+            {
+                pendingInserts.Add((bestIndex, station.Name, bestProjected));
+            }
+        }
+
+        pendingInserts.Sort((a, b) => a.index.CompareTo(b.index));
+
+        int offset = 0;
+        foreach (var (index, n, pos) in pendingInserts)
+        {
+            int insertIndex = index + offset;
+            route.Insert(insertIndex, pos);
+            stationIndices.Add(insertIndex);
+            stationIndexToName[insertIndex] = n;
+            offset++;
+        }
+    }
+
+
+
     /// <summary>
     /// Handles the movement and interaction between skytrains and the stations.
     /// </summary>
     private void MoveAlongLine()
     {
-        if (positions == null || positions.Count < 2) return;
+        if (route == null || route.Count < 2) return;
 
         Vector3 currentPos = transform.position;
-        Vector3 nextPos = positions[currentPositionIndex + 1];
+        Vector3 nextPos = route[currentPositionIndex + 1];
         Vector3 targetPos = new Vector3(nextPos.x, 0.2f, nextPos.z);
         float distanceToTarget = Vector3.Distance(currentPos, targetPos);
 
@@ -129,7 +195,7 @@ public class Skytrain : MonoBehaviour
         switch (currentState)
         {
             case SkytrainState.Stopped:
-                if (!hasTransferredPassengers && stationIndexToName.TryGetValue(currentPositionIndex+1, out string stationName))
+                if (!hasTransferredPassengers && stationIndexToName.TryGetValue(currentPositionIndex + 1, out string stationName))
                 {
                     HandleStationStop(stationName);
                 }
@@ -173,7 +239,7 @@ public class Skytrain : MonoBehaviour
                     currentSpeed = 0f;
                     transform.position = targetPos;
 
-                    if (currentPositionIndex >= positions.Count - 1)
+                    if (currentPositionIndex >= route.Count - 1)
                     {
                         enabled = false;
                         return;
@@ -208,6 +274,7 @@ public class Skytrain : MonoBehaviour
     /// </summary>
     private void HandleStationStop(string stationName)
     {
+        return;
         hasTransferredPassengers = true;
         SkytrainStation station = line.stations[stationName];
 
@@ -224,11 +291,11 @@ public class Skytrain : MonoBehaviour
     {
         Vector3 currentPos = transform.position;
 
-        for (int i = currentPositionIndex + 1; i < positions.Count; i++)
+        for (int i = currentPositionIndex + 1; i < route.Count; i++)
         {
             if (stationIndices.Contains(i))
             {
-                Vector3 stationPos = new Vector3(positions[i].x, 0f, positions[i].z);
+                Vector3 stationPos = new Vector3(route[i].x, 0f, route[i].z);
                 return Vector3.Distance(currentPos, stationPos);
             }
         }
@@ -238,7 +305,7 @@ public class Skytrain : MonoBehaviour
 
     private int NextStationIndex()
     {
-        for (int i = currentPositionIndex + 1; i < positions.Count; i++)
+        for (int i = currentPositionIndex + 1; i < route.Count; i++)
         {
             if (stationIndices.Contains(i))
             {
@@ -258,9 +325,9 @@ public class Skytrain : MonoBehaviour
             Vector3 worldPos = convertLatLonToWorld(station.Latitude, station.Longitude);
             int closestIndex = -1;
             float closestDist = float.MaxValue;
-            for (int i = 0; i < positions.Count; i++)
+            for (int i = 0; i < route.Count; i++)
             {
-                float dist = Vector3.Distance(worldPos, positions[i]);
+                float dist = Vector3.Distance(worldPos, route[i]);
                 if (dist < closestDist)
                 {
                     closestDist = dist;
@@ -274,7 +341,7 @@ public class Skytrain : MonoBehaviour
             }
         }
         return stationIndices;
-        
+
     }
 
     private float DecelerationDistance()
@@ -311,13 +378,11 @@ public class Skytrain : MonoBehaviour
 
     private void OnDrawGizmos()
     {
-        if (positions == null) return;
+        if (route == null) return;
         Gizmos.color = Color.red;
         foreach (int idx in stationIndices)
         {
-            Gizmos.DrawSphere(positions[idx], 3f);
+            Gizmos.DrawSphere(route[idx], 3f);
         }
     }
-
-    
 }

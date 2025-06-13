@@ -28,13 +28,16 @@ public class GraphVisualizer : MonoBehaviour
     Material instanceMaterial;
 
     // Bounds of Vancouver
-    float graph_lat_min = 49.20089037f;
-    float graph_lat_max = 49.29449928f;
-    float graph_lng_min = -123.2247581f;
-    float graph_lng_max = -123.0233095f;
-
+    //float graph_lat_min = 49.20089037f;
+    //float graph_lat_max = 49.29449928f;
+    //float graph_lng_min = -123.2247581f;
+    //float graph_lng_max = -123.0233095f;
+    static float graph_lat_min = 49.1670f;
+    static float graph_lat_max = 49.2860f;
+    static float graph_lng_min = -123.180f;
+    static float graph_lng_max = -122.700f;
     Transform graphParent;
-    LatLngBounds b;
+    static LatLngBounds b;
 
     string database_password = "AjSpeed22!!";
 
@@ -184,12 +187,26 @@ public class GraphVisualizer : MonoBehaviour
     {
         float lat_range = b.LatMax - b.LatMin;
         float lng_range = b.LngMax - b.LngMin;
+
         return new Vector3(
                 longitude - b.LngMin - lng_range / 2,
                 0,
                 latitude - b.LatMin - lat_range / 2
             ) * PositionScale;
     }
+
+    public static Vector3 ConvertLatLonToWorldStatic(float latitude, float longitude)
+    {
+        float lat_range = b.LatMax - b.LatMin;
+        float lng_range = b.LngMax - b.LngMin;
+
+        return new Vector3(
+                longitude - b.LngMin - lng_range / 2,
+                0,
+                latitude - b.LatMin - lat_range / 2
+            ) * 10000;
+    }
+
 
     public LatLngBounds GetCurrentLatLonBounds()
     {

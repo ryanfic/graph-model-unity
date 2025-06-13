@@ -1,57 +1,43 @@
 using System.Collections.Generic;
-using System.Linq;
-using System.Xml.Schema;
 using UnityEngine;
 
-public class SkytrainLine : MonoBehaviour
+public class GraphSkytrainLine : MonoBehaviour
 {
     public string lineName;
     public Color color;
-    public List<Vector3> points;
-    public LineRenderer lineRenderer;
+    public List<RapidTransitNode> nodes;
     public GameObject SkytrainPrefab;
     public GraphVisualizer graphVisualizer;
-
-    public GameObject editableNodePrefab;
-
     public Dictionary<string, SkytrainStation> stations;
 
-    public void InitializeLine(string lineName, Color color, List<Vector3> shape, LineRenderer lineRenderer, GraphVisualizer graphVisualizer, Dictionary<string, SkytrainStation> stations)
-    {
-        this.lineName = lineName;
-        name = lineName;
-        this.color = color;
-        this.points = shape;
-        this.lineRenderer = lineRenderer;
-        this.graphVisualizer = graphVisualizer;
-        this.stations = stations;
 
-        if (lineName == "Canada Line")
-            InitializeSkytrains(1);
-    }
+    public GameObject rapidTransitNodePrefab;
+
 
     public void InitializeLine(string lineName, Color color, List<Vector3> shape, GraphVisualizer graphVisualizer, Dictionary<string, SkytrainStation> stations)
     {
         name = lineName;
         this.lineName = lineName;
         this.color = color;
-        this.points = shape;
+        nodes = new();
         this.graphVisualizer = graphVisualizer;
         this.stations = stations;
 
         RapidTransitNode previousNode = null;
         for (int i = 0; i < shape.Count; i++)
         {
-            var node = Instantiate(editableNodePrefab);
+            var node = Instantiate(rapidTransitNodePrefab);
             RapidTransitNode nodeScript = node.GetComponent<RapidTransitNode>();
             nodeScript.lineName = lineName;
             node.transform.position = shape[i] + new Vector3(0, 0f, 0);
+            nodeScript.position = node.transform.position;
 
             if (previousNode != null)
             {
                 nodeScript.connections.Add(previousNode);
             }
             previousNode = nodeScript;
+            nodes.Add(nodeScript);
         }
 
         if (lineName == "Canada Line")
@@ -64,13 +50,12 @@ public class SkytrainLine : MonoBehaviour
         {
             var skytrain = Instantiate(SkytrainPrefab);
             var skytrainScript = skytrain.GetComponent<Skytrain>();
-            skytrainScript.InitializeSkytrain(
+            /*skytrainScript.InitializeSkytrain(
                 this,
                 $"Skytrain {i}",
-                points[i],
+                nodes[i].gameObject.transform.position,
                 graphVisualizer.ConvertLatLonToWorld
-                );
+                );*/
         }
     }
-
 }

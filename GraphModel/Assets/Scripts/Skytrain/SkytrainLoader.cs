@@ -1,10 +1,16 @@
+using Mono.Cecil;
 using Neo4j.Driver;
 using NUnit.Framework;
 using System.Collections;
 using System.Collections.Generic;
+using System.Drawing;
+using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
+using Unity.VisualScripting;
+using UnityEditor;
 using UnityEngine;
+using Color = UnityEngine.Color;
 
 public class SkytrainLoader : MonoBehaviour
 {
@@ -13,17 +19,24 @@ public class SkytrainLoader : MonoBehaviour
     public List<SkytrainStation> skytrainStations;
     public List<SkytrainLine> skytrainLines;
 
+    public Material test;
+
+    [Space(5)]
+    [Header("Settings")]
+
     public float stationScale = 10f;
+    public bool generateGraph;
 
     [Space(5)]
     [Header("Prefabs")]
     public GameObject skytrainStationPrefab;
     public GameObject skytrainLinePrefab;
+    public GameObject nodeLinePrefab;
 
     private string database_password = "AjSpeed22!!";
     private GraphVisualizer graphVisualizer;
 
-    private readonly Dictionary<string, Color> SkytrainLineColors = new Dictionary<string, Color>
+    public static readonly Dictionary<string, Color> SkytrainLineColors = new Dictionary<string, Color>
     {
         { "Canada Line", Color.green },
         { "Expo Line", Color.blue },
@@ -49,11 +62,27 @@ public class SkytrainLoader : MonoBehaviour
         while (!loadTask.IsCompleted) yield return null;
 
         var stations = loadTask.Result;
+        StationDatabase.InitializeDatabase(stations);
         InitializeStations(stations);
 
-        var lineTask = LoadTransitLines();
-        while (!lineTask.IsCompleted) yield return null;
-        InitializeLinesFromData(lineTask.Result);
+        TextAsset jsonText = Resources.Load<TextAsset>("RapidTransitGraph");
+
+
+
+        if (jsonText != null)
+        {
+            print("initializing from json");
+            string json = jsonText.text;
+            InitializeGraphFromJson(json);
+        }
+        else
+        {
+            print("initialzing from database");
+            var lineTask = LoadTransitLines();
+            while (!lineTask.IsCompleted) yield return null;
+            InitializeLinesFromData(lineTask.Result);
+        }
+
     }
 
     /// <summary>
@@ -94,14 +123,12 @@ public class SkytrainLoader : MonoBehaviour
         foreach (var line in lines)
         {
             var skytrainLine = Instantiate(skytrainLinePrefab);
-            skytrainLine.gameObject.name = line.lineName;
+            skytrainLine.name = line.lineName;
             var skytrainLineScript = skytrainLine.GetComponent<SkytrainLine>();
             var renderer = skytrainLine.GetComponent<LineRenderer>();
             var positionsList = line.geoPoints.Select(p => graphVisualizer.ConvertLatLonToWorld(p.x, p.z)).ToList(); // Assuming lat = x, lon = z 
-            
-            // this inst working the best yet. dont sort if you just want to see vancouver
-            // will need to make tis better to incorporate multiple cities
-            var positions = SortPointsGreedy(positionsList).ToArray(); 
+
+            var positions = positionsList.ToArray();
 
             renderer.positionCount = positions.Length;
             renderer.SetPositions(positions);
@@ -121,89 +148,88 @@ public class SkytrainLoader : MonoBehaviour
                 stations[data.Name] = matchedStation;
             }
 
-
-            skytrainLineScript.InitializeLine(
-                line.lineName,
-                SkytrainLineColors[line.lineName],
-                positionsList,
-                renderer,
-                graphVisualizer,
-                stations
-            );
+            if (generateGraph)
+            {
+                skytrainLineScript.InitializeLine(
+                    line.lineName,
+                    SkytrainLineColors[line.lineName],
+                    positionsList,
+                    graphVisualizer,
+                    stations
+                );
+            }
+            else
+            {
+                skytrainLineScript.InitializeLine(
+                    line.lineName,
+                    SkytrainLineColors[line.lineName],
+                    positionsList,
+                    renderer,
+                    graphVisualizer,
+                    stations
+                );
+            }
+                
 
             skytrainLines.Add(skytrainLineScript);
 
         }
     }
 
-    public static List<Vector3> SortPointsGreedy(List<Vector3> points)
+    public void InitializeGraphFromJson(string jsonText)
     {
-        if (points == null || points.Count <= 1)
-            return new List<Vector3>(points);
+        SerializableGraph graph = JsonUtility.FromJson<SerializableGraph>(jsonText);
 
-        const float anglePenaltyWeight = 0.02f;
-        const float maxSqrDistance = 100000f; // increase if your points are farther apart
+        var idToNodeMap = new Dictionary<string, RapidTransitNode>();
 
-        List<Vector3> sorted = new();
-        HashSet<int> visited = new();
-
-        // Start at southeast-most point (min z, then min x)
-        int startIndex = 0;
-        for (int i = 1; i < points.Count; i++)
+        // create all nodes
+        foreach (var line in graph.lines)
         {
-            if (points[i].z < points[startIndex].z ||
-                (Mathf.Approximately(points[i].z, points[startIndex].z) && points[i].x < points[startIndex].x))
+            foreach (var serialNode in line.nodes)
             {
-                startIndex = i;
+                GameObject nodeObj = GameObject.CreatePrimitive(PrimitiveType.Sphere);
+                nodeObj.name = serialNode.id;
+                var node = nodeObj.AddComponent<RapidTransitNode>();
+                node.id = serialNode.id;
+                node.lineName = serialNode.lineName;
+                node.transform.position = serialNode.position;
+                node.transform.position = new Vector3(node.transform.position.x, 0f, node.transform.position.z);
+                node.routeIds = serialNode.routeIds;
+
+                idToNodeMap[serialNode.id] = node;
+
             }
         }
 
-        sorted.Add(points[startIndex]);
-        visited.Add(startIndex);
-
-        while (visited.Count < points.Count)
+        // connect nodes
+        foreach (var line in graph.lines)
         {
-            Vector3 current = sorted[^1];
 
-            float bestScore = float.MaxValue;
-            int bestIndex = -1;
-
-            Vector3 lastDir = sorted.Count >= 2
-                ? (sorted[^1] - sorted[^2]).normalized
-                : Vector3.zero;
-
-            for (int i = 0; i < points.Count; i++)
+            foreach (var serialNode in line.nodes)
             {
-                if (visited.Contains(i)) continue;
+                if (!idToNodeMap.TryGetValue(serialNode.id, out var node))
+                    continue;
 
-                Vector3 candidate = points[i];
-                float dist = Vector3.SqrMagnitude(candidate - current);
-                if (dist > maxSqrDistance) continue;
-
-                float anglePenalty = 0f;
-                if (lastDir != Vector3.zero && (candidate - current).sqrMagnitude > 0.001f)
+                foreach (var connId in serialNode.connections)
                 {
-                    Vector3 dir = (candidate - current).normalized;
-                    float angle = Vector3.Angle(lastDir, dir);
-                    anglePenalty = angle * anglePenaltyWeight;
-                }
-
-                float score = dist + anglePenalty;
-                if (score < bestScore)
-                {
-                    bestScore = score;
-                    bestIndex = i;
+                    if (idToNodeMap.TryGetValue(connId, out var targetNode))
+                    {
+                        node.connections.Add(targetNode);
+                        var display = Instantiate(nodeLinePrefab);
+                        display.GetComponent<LineBetweenNodes>().Initialize(
+                            node.transform,
+                            targetNode.transform,
+                            1f,
+                            test,
+                            line.lineName
+                            );
+                    }
                 }
             }
-
-            if (bestIndex == -1)
-                break; // disconnected points?
-
-            sorted.Add(points[bestIndex]);
-            visited.Add(bestIndex);
         }
 
-        return sorted;
+        SkytrainSystemManager skytrainSystemManager = FindFirstObjectByType<SkytrainSystemManager>();
+        skytrainSystemManager.Initialize(graph);
     }
 
     /// <summary>

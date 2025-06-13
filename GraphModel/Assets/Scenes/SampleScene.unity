@@ -165,10 +165,14 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   skytrainStations: []
   skytrainLines: []
+  test: {fileID: 2100000, guid: c36cb6efaa0ba434d9564623afff466e, type: 2}
   stationScale: 10
+  generateGraph: 0
   skytrainStationPrefab: {fileID: 5795353504553419941, guid: 84af93cc374213247a3aed5a0a72ecd3,
     type: 3}
   skytrainLinePrefab: {fileID: 3339634358308736114, guid: ef792e19182e8334cb04506ff1ab5de9,
+    type: 3}
+  nodeLinePrefab: {fileID: 7254147692512394763, guid: 72abaa8a6f579944184e01b5cfd1c178,
     type: 3}
 --- !u!1 &330585543
 GameObject:
@@ -528,7 +532,7 @@ MonoBehaviour:
   PositionScale: 10000
   nodeVisuals:
     junction:
-      enabled: 1
+      enabled: 0
       scale: 1.5
       offsetY: 0
       color: {r: 0, g: 1, b: 0, a: 1}
@@ -584,6 +588,54 @@ Transform:
   m_Children: []
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!1 &1693446921
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 1693446922}
+  - component: {fileID: 1693446923}
+  m_Layer: 0
+  m_Name: SkytrainManager
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &1693446922
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1693446921}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 0}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &1693446923
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1693446921}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 3198dd94772db3a43b437b083b79e16e, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  graph:
+    lines: []
+  skytrainPrefab: {fileID: 1427589821901168854, guid: c8d0010ce15bc9c42b1d98c916064834,
+    type: 3}
 --- !u!1660057539 &9223372036854775807
 SceneRoots:
   m_ObjectHideFlags: 0
@@ -593,3 +645,4 @@ SceneRoots:
   - {fileID: 832575519}
   - {fileID: 912441961}
   - {fileID: 179427738}
+  - {fileID: 1693446922}

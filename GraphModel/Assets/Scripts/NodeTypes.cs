@@ -31,7 +31,7 @@ public abstract class GraphNode<T> where T : GraphNode<T>, new()
 
     protected virtual void InitializeFromINode(INode record)
     {
-        id = record["id"].As<int>();
+        //id = record["id"].As<int>();
         latitude = record["latitude"].As<float>();
         longitude = record["longitude"].As<float>();
     }
@@ -59,11 +59,13 @@ public class Crime : GraphNode<Crime> { }
 public class RapidTransit : GraphNode<RapidTransit> 
 {
     public string stationName;
+    public string lines;
 
     protected override void InitializeFromINode(INode record)
     {
         base.InitializeFromINode(record);
         stationName = record["name"].As<string>();
+        lines = record["line_name"].As<string>();
     }
 }
 

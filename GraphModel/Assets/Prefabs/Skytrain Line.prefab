@@ -48,9 +48,11 @@ MonoBehaviour:
   lineName: 
   color: {r: 1, g: 0, b: 0, a: 1}
   shape: []
-  gameObjectRepresentation: {fileID: 0}
   lineRenderer: {fileID: 0}
   SkytrainPrefab: {fileID: 7264818641856582234, guid: ccb4fa2fe767e89499e2fc4f0ca48cfe,
+    type: 3}
+  graphVisualizer: {fileID: 0}
+  editableNodePrefab: {fileID: 8472916149435213847, guid: 7b0caead78a95de4c8b9155818773a67,
     type: 3}
 --- !u!120 &654416885316230222
 LineRenderer:
