@@ -636,6 +636,8 @@ MonoBehaviour:
     lines: []
   skytrainPrefab: {fileID: 1427589821901168854, guid: c8d0010ce15bc9c42b1d98c916064834,
     type: 3}
+  skytrainLinePrefab: {fileID: 1731634843259756843, guid: 5fac751d7d7fec445a1588ed4cc51d54,
+    type: 3}
 --- !u!1660057539 &9223372036854775807
 SceneRoots:
   m_ObjectHideFlags: 0

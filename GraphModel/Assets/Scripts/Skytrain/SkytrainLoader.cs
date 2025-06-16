@@ -16,7 +16,7 @@ public class SkytrainLoader : MonoBehaviour
 {
     
 
-    public List<SkytrainStation> skytrainStations;
+    public static List<SkytrainStation> skytrainStations;
     public List<SkytrainLine> skytrainLines;
 
     public Material test;
@@ -36,12 +36,7 @@ public class SkytrainLoader : MonoBehaviour
     private string database_password = "AjSpeed22!!";
     private GraphVisualizer graphVisualizer;
 
-    public static readonly Dictionary<string, Color> SkytrainLineColors = new Dictionary<string, Color>
-    {
-        { "Canada Line", Color.green },
-        { "Expo Line", Color.blue },
-        { "Millennium Line", new Color(1.0f, 0.84f, 0.0f) }, // gold/yellow
-    };
+    
 
 
     private void Start()
@@ -134,7 +129,7 @@ public class SkytrainLoader : MonoBehaviour
             renderer.SetPositions(positions);
             renderer.startWidth = renderer.endWidth = 2f;
             renderer.material = new Material(Shader.Find("Sprites/Default")); 
-            renderer.startColor = renderer.endColor = SkytrainLineColors[line.lineName];
+            renderer.startColor = renderer.endColor = SkytrainSystemManager.GetLineColor(line.lineName);
 
             skytrainLine.transform.parent = transform;
 
@@ -152,7 +147,7 @@ public class SkytrainLoader : MonoBehaviour
             {
                 skytrainLineScript.InitializeLine(
                     line.lineName,
-                    SkytrainLineColors[line.lineName],
+                    SkytrainSystemManager.GetLineColor(line.lineName),
                     positionsList,
                     graphVisualizer,
                     stations
@@ -162,7 +157,7 @@ public class SkytrainLoader : MonoBehaviour
             {
                 skytrainLineScript.InitializeLine(
                     line.lineName,
-                    SkytrainLineColors[line.lineName],
+                    SkytrainSystemManager.GetLineColor(line.lineName),
                     positionsList,
                     renderer,
                     graphVisualizer,

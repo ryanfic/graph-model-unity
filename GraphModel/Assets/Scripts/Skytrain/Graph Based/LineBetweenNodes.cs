@@ -38,7 +38,7 @@ public class LineBetweenNodes : MonoBehaviour
 
         if (lineObject.TryGetComponent<Renderer>(out var renderer))
         {
-            renderer.material.color = SkytrainLoader.SkytrainLineColors[lineName];
+            renderer.material.color = SkytrainSystemManager.GetLineColor(lineName);
         }
 
         UpdateLine();

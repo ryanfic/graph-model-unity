@@ -18,7 +18,7 @@ public class RapidTransitNode : MonoBehaviour
     private void OnDrawGizmos()
     {
         if (connections == null || lineName == null) return;
-        Gizmos.color = SkytrainLoader.SkytrainLineColors[lineName];
+        Gizmos.color = SkytrainSystemManager.GetLineColor(lineName);
         foreach (var connection in connections)
         {
             if (connection != null)

@@ -20,7 +20,7 @@ public class GraphSkytrain : MonoBehaviour
     private Vector2 currentPosition;
     private Vector2 nextPosition;
     private float distanceToNext;
-    private List<Vector3> route;
+    [SerializeField] private List<Vector3> route;
 
     private HashSet<int> stationIndices = new();
     private Dictionary<int, string> stationIndexToName = new();
@@ -107,10 +107,57 @@ public class GraphSkytrain : MonoBehaviour
     public float maxDist = 1000f;
     public void InitializeSkytrain(SerializableLine line, int routeId)
     {
-        this.route = new List<Vector3>(line.nodes.Where(n => n.routeIds.Contains(routeId)).ToList().Select(n => n.position));
-        transform.position = route[0];
+        // Step 1: Filter nodes that are part of the route
+        var routeNodes = line.nodes
+            .Where(n => n.routeIds.Contains(routeId))
+            .ToList();
+
+        // Step 2: Map node ID (string) to node object
+        var nodeMap = routeNodes.ToDictionary(n => n.id, n => n); // id is string
+
+        // Step 3: Build adjacency list of node ID -> list of connected node IDs
+        var adjacency = new Dictionary<string, List<string>>();
+        foreach (var node in routeNodes)
+        {
+            adjacency[node.id] = node.connections
+                .Where(connId => nodeMap.ContainsKey(connId)) // only include connections that are also in the route
+                .ToList();
+        }
+
+        // Step 4: Find a start node (only 1 connection in this route)
+        string startId = adjacency.FirstOrDefault(pair => pair.Value.Count == 1).Key;
+
+        if (startId == null)
+        {
+            Debug.LogError("Could not find a valid start node for route " + routeId);
+            return;
+        }
+
+        // Step 5: Traverse route with DFS to maintain correct order
+        var visited = new HashSet<string>();
+        var orderedRoute = new List<Vector3>();
+
+        void DFS(string currentId)
+        {
+            visited.Add(currentId);
+            orderedRoute.Add(nodeMap[currentId].position);
+
+            foreach (var neighbor in adjacency[currentId])
+            {
+                if (!visited.Contains(neighbor))
+                    DFS(neighbor);
+            }
+        }
+
+        DFS(startId);
+
+        // Step 6: Set route and position
+        this.route = orderedRoute;
+        transform.position = new Vector3(route[0].x, 0f, route[0].z);
         InitializeStations(line.lineName, maxDist);
     }
+
+
 
 
 
@@ -169,6 +216,12 @@ public class GraphSkytrain : MonoBehaviour
             route.Insert(insertIndex, pos);
             stationIndices.Add(insertIndex);
             stationIndexToName[insertIndex] = n;
+
+            if (n.Contains("Brig"))
+                print($"{n} {index} {route.Count}");
+            if (n.Contains("Lans"))
+                print($"{n} {index} {route.Count}");
+
             offset++;
         }
     }
@@ -285,14 +338,16 @@ public class GraphSkytrain : MonoBehaviour
     /// </summary>
     private void HandleStationStop(string stationName)
     {
-        return;
         hasTransferredPassengers = true;
-        SkytrainStation station = line.stations[stationName];
+        SkytrainStation station = SkytrainLoader.skytrainStations.Where(s => s.stationName == stationName).FirstOrDefault();
 
-        UnloadPassengers(5);
 
         if (station != null)
+        {
+            UnloadPassengers(5);
             station.IncreasePassengers(5);
+        }
+
         else
             print("station is null");
     }
