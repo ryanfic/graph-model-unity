@@ -216,12 +216,6 @@ public class GraphSkytrain : MonoBehaviour
             route.Insert(insertIndex, pos);
             stationIndices.Add(insertIndex);
             stationIndexToName[insertIndex] = n;
-
-            if (n.Contains("Brig"))
-                print($"{n} {index} {route.Count}");
-            if (n.Contains("Lans"))
-                print($"{n} {index} {route.Count}");
-
             offset++;
         }
     }

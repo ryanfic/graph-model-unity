@@ -251,6 +251,7 @@ GameObject:
   - component: {fileID: 2132794990599358276}
   - component: {fileID: 333656070348413381}
   - component: {fileID: -7213021047324465624}
+  - component: {fileID: -8275588128741525457}
   m_Layer: 0
   m_Name: SkytrainStation
   m_TagString: Untagged
@@ -345,6 +346,19 @@ MonoBehaviour:
   lat: 0
   lon: 0
   gameObjectRepresentation: {fileID: 0}
+--- !u!114 &-8275588128741525457
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 5795353504553419941}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: a0ede27317ae65c47a473b35eb14e2d9, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  detectionRadius: 200
 --- !u!1 &6774233777295793713
 GameObject:
   m_ObjectHideFlags: 0
