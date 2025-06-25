@@ -7,6 +7,8 @@ using System.Drawing;
 using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
+using Unity.Entities;
+using Unity.Mathematics;
 using Unity.VisualScripting;
 using UnityEditor;
 using UnityEngine;
@@ -109,7 +111,10 @@ public class SkytrainLoader : MonoBehaviour
             );
 
             skytrainStations.Add(station);
+
         }
+        StationSpawnerBootstrap.CreateBlobEntityFromPositions(skytrainStations.Select(s => (float3) s.transform.position).ToList());
+
     }
 
     public void InitializeLinesFromData(List<RapidTransitLine> lines)

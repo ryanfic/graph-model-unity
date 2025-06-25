@@ -28,6 +28,9 @@ public class CameraController : MonoBehaviour
 
         controls.Camera.UpDown.performed += ctx => upDownInput = ctx.ReadValue<float>();
         controls.Camera.UpDown.canceled += ctx => upDownInput = 0f;
+
+        pitch = transform.rotation.eulerAngles.x;
+        yaw = transform.rotation.eulerAngles.y;
     }
 
     private void OnEnable() => controls.Enable();

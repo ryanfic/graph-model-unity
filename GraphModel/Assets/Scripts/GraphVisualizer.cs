@@ -27,11 +27,7 @@ public class GraphVisualizer : MonoBehaviour
     [SerializeField]
     Material instanceMaterial;
 
-    // Bounds of Vancouver
-    //float graph_lat_min = 49.20089037f;
-    //float graph_lat_max = 49.29449928f;
-    //float graph_lng_min = -123.2247581f;
-    //float graph_lng_max = -123.0233095f;
+    // approx Bounds of Vancouver
     static float graph_lat_min = 49.1670f;
     static float graph_lat_max = 49.2860f;
     static float graph_lng_min = -123.180f;
