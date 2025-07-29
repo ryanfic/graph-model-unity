@@ -16,6 +16,8 @@ public class SimulationTimeManager : MonoBehaviour
     private float runTime = 0f;
     private float simulationTime = 0f;
 
+    private int timeFramesPerDay = 48;
+
     public float nextTimeFrameChange = 30f;
 
     void Start()
@@ -29,6 +31,7 @@ public class SimulationTimeManager : MonoBehaviour
         // these values should be standardized
         nextTimeFrameChange = timeFrameLengthInSimulationMinutes;
         currentTimeFrameNumber = 0;
+        timeFramesPerDay = 1440 / (int)timeFrameLengthInSimulationMinutes;
     }
 
     void Update()
@@ -45,6 +48,11 @@ public class SimulationTimeManager : MonoBehaviour
             CallChangeTimeFrameOnStations();
             nextTimeFrameChange += timeFrameLengthInSimulationMinutes; // Schedule next call
         }
+    }
+
+    public int GetTimeFramesPerDay()
+    {
+        return timeFramesPerDay;
     }
 
     private void UpdateTimeDisplay()

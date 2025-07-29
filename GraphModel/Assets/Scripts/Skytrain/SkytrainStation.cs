@@ -1,5 +1,6 @@
 using TMPro;
 using UnityEngine;
+using System.Collections.Generic;
 
 public class SkytrainStation : MonoBehaviour
 {
@@ -16,6 +17,14 @@ public class SkytrainStation : MonoBehaviour
 
     private int passengerCount = 0;
 
+    private List<int> expectedNumPassengersGettingOnTrainInTimeFrameList;
+    private List<int> expectedNumPassengersGettingOffTrainInTimeFrameList;
+
+    [SerializeField] private int numPassengersGottenOnTrainInTimeFrame = 0;
+    [SerializeField] private int numPassengersGottenOffTrainInTimeFrame = 0;
+    [SerializeField] private int curExpectedNumPassengersGettingOnTrainInTimeFrame = 0;
+    [SerializeField] private int curExpectedNumPassengersGettingOffTrainInTimeFrame = 0;
+
     public void InitializeStation(string name, float lat, float lon, GameObject gameObjectRepresentation)
     {
         this.name = name;
@@ -25,6 +34,8 @@ public class SkytrainStation : MonoBehaviour
         this.gameObjectRepresentation = gameObjectRepresentation;
         SetNameAsset(name);
         UpdatePassengerCountAsset();
+
+        InitializeIngressEgressValues();
     }
 
     public void InitializeStation(string name, float lat, float lon, GameObject gameObjectRepresentation, int passengerCount)
@@ -67,5 +78,64 @@ public class SkytrainStation : MonoBehaviour
         // change the number of people expected to enter the trains
         // set the current number of people having exited trains during time frame to 0
         // set the current number of people having entered trains during time frame to 0
+
+
+        int cyclicTimeFrameNumber = timeFrameNumber % expectedNumPassengersGettingOnTrainInTimeFrameList.Count;
+
+        numPassengersGottenOnTrainInTimeFrame = 0;
+        numPassengersGottenOffTrainInTimeFrame = 0;
+        curExpectedNumPassengersGettingOnTrainInTimeFrame = expectedNumPassengersGettingOnTrainInTimeFrameList[cyclicTimeFrameNumber];
+        curExpectedNumPassengersGettingOffTrainInTimeFrame = expectedNumPassengersGettingOffTrainInTimeFrameList[cyclicTimeFrameNumber];
+    }
+
+    private void InitializeIngressEgressValues()
+    {
+        SimulationTimeManager manager = FindObjectOfType<SimulationTimeManager>();
+
+        int timeFramesPerDay = 48;
+
+
+        if (manager != null)
+        {
+            timeFramesPerDay = manager.GetTimeFramesPerDay();
+        }
+        else
+        {
+            Debug.LogWarning("SimulationTimeManager not found in the scene, using default value of 48");
+        }
+        LoadIngressEgressValues(timeFramesPerDay);
+    }
+
+    private void LoadIngressEgressValues(int timeFramesPerDay)
+    {
+        // get a list of time frames from config (or construct a hardcoded value)
+        List<(int, int)> ingressEgressValueList = LoadHardCodedIngressEgressValues(timeFramesPerDay);
+
+        expectedNumPassengersGettingOnTrainInTimeFrameList = new List<int>();
+        expectedNumPassengersGettingOffTrainInTimeFrameList = new List<int>();
+
+        int count = 0;
+        while (count < timeFramesPerDay)
+        {
+            int i = count % ingressEgressValueList.Count;
+            expectedNumPassengersGettingOnTrainInTimeFrameList.Add(ingressEgressValueList[i].Item1);
+            expectedNumPassengersGettingOffTrainInTimeFrameList.Add(ingressEgressValueList[i].Item2);
+            count++;
+        }
+
+        numPassengersGottenOnTrainInTimeFrame = 0;
+        numPassengersGottenOffTrainInTimeFrame = 0;
+        curExpectedNumPassengersGettingOnTrainInTimeFrame = expectedNumPassengersGettingOnTrainInTimeFrameList[0];
+        curExpectedNumPassengersGettingOffTrainInTimeFrame = expectedNumPassengersGettingOffTrainInTimeFrameList[0];
+}
+
+    private List<(int,int)> LoadHardCodedIngressEgressValues(int timeFramesPerDay)
+    {
+        List<(int, int)> ingressEgressValueList = new List<(int, int)>();
+        for (int i = 0; i < timeFramesPerDay; i++)
+        {
+            ingressEgressValueList.Add((i+1, 2*(i+1)));
+        }
+        return ingressEgressValueList;
     }
 }
