@@ -129,7 +129,7 @@ public class GameObjectToEntitySkytrain : MonoBehaviour
         
     }
 
-        private void InstantiateLoadingZoneEntities()
+    private void InstantiateLoadingZoneEntities()
     {
         // Create a RenderMeshDescription using the convenience constructor
         // with named parameters.
@@ -140,7 +140,7 @@ public class GameObjectToEntitySkytrain : MonoBehaviour
         // Create an array of mesh and material required for runtime rendering.
         //From prefab
         var renderMeshArray = new RenderMeshArray(new Material[] {
-           _loadingZonePrefab.GetComponent<Renderer>().sharedMaterial
+            _loadingZonePrefab.GetComponent<Renderer>().sharedMaterial
         }, new Mesh[] {
             _loadingZonePrefab.GetComponent<MeshFilter>().sharedMesh
         });
@@ -172,14 +172,23 @@ public class GameObjectToEntitySkytrain : MonoBehaviour
             });
 
             // Add physics stuff to enable physics
+            //PhysicsFilter
+            Unity.Physics.CollisionFilter colFilter = Unity.Physics.CollisionFilter.Default;
+            // Would change what the trigger can collide with here
+            //Material (for physics, not colour)
+            Unity.Physics.Material colMaterial = Unity.Physics.Material.Default;
+            colMaterial.CollisionResponse = Unity.Physics.CollisionResponsePolicy.RaiseTriggerEvents; // This makes it a trigger
             //PhysicsCollider
-            BlobAssetReference<Unity.Physics.Collider> boxColliderBlob = Unity.Physics.BoxCollider.Create(new Unity.Physics.BoxGeometry
-            {
-                Center = float3.zero,
-                BevelRadius = 0.05f,
-                Orientation = quaternion.identity,
-                Size = new float3(1, 1, 1)
-            });
+            BlobAssetReference <Unity.Physics.Collider> boxColliderBlob = Unity.Physics.BoxCollider.Create(new Unity.Physics.BoxGeometry
+                {
+                    Center = float3.zero,
+                    BevelRadius = 0.05f,
+                    Orientation = quaternion.identity,
+                    Size = new float3(1, 1, 1)
+                },
+                colFilter,
+                colMaterial
+            );
             _entityManager.AddComponentData(loadingZoneEntity, new Unity.Physics.PhysicsCollider { Value = boxColliderBlob });
             //PhysicsVelocity
             _entityManager.AddComponentData(loadingZoneEntity, new Unity.Physics.PhysicsVelocity
@@ -197,11 +206,8 @@ public class GameObjectToEntitySkytrain : MonoBehaviour
                 Message = entityMessages[i % entityMessages.Count]
             });
 
-            _entityManager.AddBuffer<StatefulCollisionEvent>(loadingZoneEntity);
-
-            /*    .AddComponentData(loadingZoneEntity, new StatefulCollisionEvent
-            {
-            });*/
+            //_entityManager.AddBuffer<StatefulCollisionEvent>(loadingZoneEntity); // For Collisions
+            _entityManager.AddBuffer<StatefulTriggerEvent>(loadingZoneEntity); // For Triggers
 
             _loadingZoneEntities.Add(loadingZoneEntity);
         }
