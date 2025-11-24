@@ -86,4 +86,10 @@ public class SkytrainInsideStationDetector : MonoBehaviour
         leftLoadingArea = null;
         rightLoadingArea = null;
     }
+
+    public bool DoTheThing()
+    {
+        Debug.Log("WE DID THE THING");
+        return true;
+    }
 }

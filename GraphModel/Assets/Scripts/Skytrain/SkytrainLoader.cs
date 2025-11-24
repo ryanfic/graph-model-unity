@@ -35,7 +35,7 @@ public class SkytrainLoader : MonoBehaviour
     public GameObject skytrainLinePrefab;
     public GameObject nodeLinePrefab;
 
-    private string database_password = "should_not_save_into_source"; //"should_not_save_into_source"
+    private string database_password = "should_not_save_into_source";
     private GraphVisualizer graphVisualizer;
 
     
