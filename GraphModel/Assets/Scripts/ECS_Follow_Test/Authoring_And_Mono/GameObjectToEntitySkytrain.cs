@@ -18,7 +18,6 @@ public class GameObjectToEntitySkytrain : MonoBehaviour
     private EntityManager _entityManager;
     private Entity _skytrainEntity;
     private List<Entity> _loadingZoneEntities = new List<Entity>();
-    private bool _visibleSkytrainEntityCreated = false;
     private Entity _visibleSkytrainEntity;
     private float _visibleSkytrainEntityScale = 1.5f;
 
@@ -26,37 +25,18 @@ public class GameObjectToEntitySkytrain : MonoBehaviour
     {
         _entityManager = World.DefaultGameObjectInjectionWorld.EntityManager;
         Debug.Log("_entityManager.World " + _entityManager.World);
-        // Create an entity for the skytrain and add the position component
-        _skytrainEntity = _entityManager.CreateEntity(typeof(ConvertedSkytrainProperties));
-        // If set to create visible entity, do so
-        if (_createVisibleSkytrainEntity && _skytrainVisibleEntityPrefab != null)
-        {
-            InstantiateVisibleSkytrainEntity();
-        }
+
+        InstantiateSkytrainEntity();
 
         // create the loading zone entities
         InstantiateLoadingZoneEntities();
-        // set the offset of the loading zone
 
-        // add the component onto the skytrain that references
-
-
-
-        /*_entityManager.AddComponent(_entity, new ColliderParentProperties {
-            _colliderObject = GetEntity(_colliderObject),
-            _colliderPosition = _colliderPosition
-        });*/
         Debug.Log(gameObject.name + " entity [" + _skytrainEntity.Index + "]");
 
-        // Initialize the position component with the GameObject's current position
-        _entityManager.SetComponentData(_skytrainEntity, new ConvertedSkytrainProperties { Value = (float3)transform.position });
     }
 
     void Update()
     {
-        // Update the entity's position component with the GameObject's current position
-        _entityManager.SetComponentData(_skytrainEntity, new ConvertedSkytrainProperties { Value = (float3)transform.position });
-
         UpdateVisibleSkytrainEntityTransform();
 
         UpdateLoadingZonesTransforms();
@@ -72,14 +52,37 @@ public class GameObjectToEntitySkytrain : MonoBehaviour
         }
     }
 
+    private void InstantiateSkytrainEntity()
+    {
+        // Create an entity for the skytrain and add the position component
+        _skytrainEntity = _entityManager.CreateEntity(typeof(SkytrainProperties));
+        _entityManager.SetComponentData(_skytrainEntity, new SkytrainProperties {
+            SkytrainName = "SkytrainCoolio",
+            MaxCapacity = 500,
+            CurrentCapacity = 0
+        });
+        _entityManager.AddComponentData(_skytrainEntity, new LocalTransform
+        {
+            Position = this.transform.position,
+            Scale = _visibleSkytrainEntityScale,
+            Rotation = this.transform.rotation
+        });
+        _entityManager.AddComponent<LocalToWorld>(_skytrainEntity);
+
+        // If set to create visible entity, add relevant components to make it visible
+        if (_createVisibleSkytrainEntity && _skytrainVisibleEntityPrefab != null)
+        {
+            InstantiateVisibleSkytrainEntity();
+        }
+        // If was supposed to make a visible entity, but did not set the prefab
+        else if (_createVisibleSkytrainEntity) 
+        {
+            Debug.LogError("Was supposed to create a visible skytrain, but the skytrain lacked a necessary prefab");
+        }
+    }
+
     private void InstantiateVisibleSkytrainEntity()
     {
-        EntityArchetype visibleSkytrainArchetype = _entityManager.CreateArchetype(
-                typeof(LocalToWorld)//,
-                                    //typeof(RenderBounds),
-                                    //typeof(RenderMesh)
-            );
-
         // Create a RenderMeshDescription using the convenience constructor
         // with named parameters.
         var desc = new RenderMeshDescription(
@@ -96,36 +99,24 @@ public class GameObjectToEntitySkytrain : MonoBehaviour
             _skytrainVisibleEntityPrefab.GetComponent<MeshFilter>().sharedMesh
         });
 
-        _visibleSkytrainEntity = _entityManager.CreateEntity(visibleSkytrainArchetype);
-
         // Call AddComponents to populate base entity with the components required
         // by Entities Graphics
         RenderMeshUtility.AddComponents(
-            _visibleSkytrainEntity,
+            _skytrainEntity,
             _entityManager,
             desc,
             renderMeshArray,
             MaterialMeshInfo.FromRenderMeshArrayIndices(0, 0));
-        _entityManager.AddComponentData(_visibleSkytrainEntity, new LocalTransform
+        
+    }
+    private void UpdateVisibleSkytrainEntityTransform()
+    {
+        _entityManager.SetComponentData(_skytrainEntity, new LocalTransform
         {
             Position = this.transform.position,
             Scale = _visibleSkytrainEntityScale,
             Rotation = this.transform.rotation
         });
-
-        _visibleSkytrainEntityCreated = true;
-    }
-    private void UpdateVisibleSkytrainEntityTransform()
-    {
-        if ( _visibleSkytrainEntityCreated)
-        {
-            _entityManager.SetComponentData(_visibleSkytrainEntity, new LocalTransform
-            {
-                Position = this.transform.position,
-                Scale = _visibleSkytrainEntityScale,
-                Rotation = this.transform.rotation
-            });
-        }
         
     }
 
@@ -169,6 +160,10 @@ public class GameObjectToEntitySkytrain : MonoBehaviour
                 Position = this.transform.position + this.transform.rotation * offset,
                 Scale = _loadingZoneScale,
                 Rotation = this.transform.rotation
+            });
+
+            _entityManager.AddComponentData(loadingZoneEntity, new LoadingZoneComponent { 
+                SkytrainEntity = _skytrainEntity
             });
 
             // Add physics stuff to enable physics
