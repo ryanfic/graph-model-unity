@@ -14,6 +14,7 @@ public class GameObjectToEntitySkytrain : MonoBehaviour
     public List<Vector3> _loadingZoneOffsets;
     public bool _createVisibleSkytrainEntity = true;
     public GameObject _skytrainVisibleEntityPrefab;
+    public bool _loadingZoneInTransit = false; // For testing purposes, remove after testing if "in transit" will stop loading zones from functioning
 
     private EntityManager _entityManager;
     private Entity _skytrainEntity;
@@ -203,6 +204,12 @@ public class GameObjectToEntitySkytrain : MonoBehaviour
 
             //_entityManager.AddBuffer<StatefulCollisionEvent>(loadingZoneEntity); // For Collisions
             _entityManager.AddBuffer<StatefulTriggerEvent>(loadingZoneEntity); // For Triggers
+
+            // If loading zone is in transit, add the "in transit" component
+            if (_loadingZoneInTransit)
+            {
+                _entityManager.AddComponent<LoadingZoneInTransitComponent>(loadingZoneEntity);
+            }
 
             _loadingZoneEntities.Add(loadingZoneEntity);
         }
