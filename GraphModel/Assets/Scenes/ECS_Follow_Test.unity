@@ -735,15 +735,20 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 2ee5a31d461a2dc4eb860d80def013cb, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  _loadingZonePrefab: {fileID: 759884456849320071, guid: 9c36a0881a043174a81b45375159a6ce,
-    type: 3}
-  _loadingZoneScale: 1
-  _loadingZoneOffsets:
-  - {x: 3, y: 0, z: 0}
-  - {x: -3, y: 0, z: 0}
-  _createVisibleSkytrainEntity: 1
-  _skytrainVisibleEntityPrefab: {fileID: 2443082792683386117, guid: d37b6515b65f49e42899c12fa8c5e86f,
-    type: 3}
+  _loadingZones:
+    _loadingZonePrefab: {fileID: 759884456849320071, guid: 9c36a0881a043174a81b45375159a6ce,
+      type: 3}
+    _loadingZoneScale: 1
+    _loadingZoneOffsets:
+    - {x: 2, y: 0, z: 0}
+    - {x: -2, y: 0, z: 0}
+  _visibleSkytrain:
+    _createVisibleSkytrainEntity: 1
+    _skytrainVisibleEntityPrefab: {fileID: 2443082792683386117, guid: d37b6515b65f49e42899c12fa8c5e86f,
+      type: 3}
+  _motionDetection:
+    _movementThreshold: 2.5
+  _loadingZoneInTransit: 0
 --- !u!114 &1948232670
 MonoBehaviour:
   m_ObjectHideFlags: 0

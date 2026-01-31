@@ -9,11 +9,9 @@ using Unity.Physics.Stateful;
 
 public class GameObjectToEntitySkytrain : MonoBehaviour
 {
-    public GameObject _loadingZonePrefab;
-    public float _loadingZoneScale = 1.0f;
-    public List<Vector3> _loadingZoneOffsets;
-    public bool _createVisibleSkytrainEntity = true;
-    public GameObject _skytrainVisibleEntityPrefab;
+    public SkytrainLoadingZoneVariables _loadingZones;
+    public SkytrainVisibleSkytrainVariables _visibleSkytrain;
+    public SkytrainMotionDetectionVariables _motionDetection;
     public bool _loadingZoneInTransit = false; // For testing purposes, remove after testing if "in transit" will stop loading zones from functioning
 
     private EntityManager _entityManager;
@@ -70,13 +68,42 @@ public class GameObjectToEntitySkytrain : MonoBehaviour
         });
         _entityManager.AddComponent<LocalToWorld>(_skytrainEntity);
 
+        float3 skytrainPosition = this.transform.position;
+
+        // Add skytrain motion state
+        _entityManager.AddComponentData(_skytrainEntity, new SkytrainMotionState { 
+            Threshold = _motionDetection._movementThreshold,
+            TotalMovement = 0,
+            PreviousPosition = skytrainPosition,
+            CurrentBufferPosition = 0
+        });
+
+        DynamicBuffer<SkytrainMotionMagnitude> motionMagnitudesBuffer = _entityManager.AddBuffer<SkytrainMotionMagnitude>(_skytrainEntity);
+
+        for (int i = 0; i < motionMagnitudesBuffer.Capacity; i++)
+        {
+            motionMagnitudesBuffer.Add(new SkytrainMotionMagnitude
+            { 
+                Value = 0
+            });
+        }
+
+
+        /*
+         * 
+         * public float Threshold; // What value
+    public float TotalMovement; // Sum of magnitude of movements contained within positions buffer
+    public int CurrentBufferPosition;
+         * */
+        // Add skytrain motion positions
+
         // If set to create visible entity, add relevant components to make it visible
-        if (_createVisibleSkytrainEntity && _skytrainVisibleEntityPrefab != null)
+        if (_visibleSkytrain._createVisibleSkytrainEntity && _visibleSkytrain._skytrainVisibleEntityPrefab != null)
         {
             InstantiateVisibleSkytrainEntity();
         }
         // If was supposed to make a visible entity, but did not set the prefab
-        else if (_createVisibleSkytrainEntity) 
+        else if (_visibleSkytrain._createVisibleSkytrainEntity) 
         {
             Debug.LogError("Was supposed to create a visible skytrain, but the skytrain lacked a necessary prefab");
         }
@@ -95,9 +122,9 @@ public class GameObjectToEntitySkytrain : MonoBehaviour
         //var renderMeshArray = new RenderMeshArray(new Material[] { Material }, new Mesh[] { Mesh });
         //From prefab
         var renderMeshArray = new RenderMeshArray(new Material[] {
-           _skytrainVisibleEntityPrefab.GetComponent<Renderer>().sharedMaterial
+           _visibleSkytrain._skytrainVisibleEntityPrefab.GetComponent<Renderer>().sharedMaterial
         }, new Mesh[] {
-            _skytrainVisibleEntityPrefab.GetComponent<MeshFilter>().sharedMesh
+            _visibleSkytrain._skytrainVisibleEntityPrefab.GetComponent<MeshFilter>().sharedMesh
         });
 
         // Call AddComponents to populate base entity with the components required
@@ -132,9 +159,9 @@ public class GameObjectToEntitySkytrain : MonoBehaviour
         // Create an array of mesh and material required for runtime rendering.
         //From prefab
         var renderMeshArray = new RenderMeshArray(new Material[] {
-            _loadingZonePrefab.GetComponent<Renderer>().sharedMaterial
+            _loadingZones._loadingZonePrefab.GetComponent<Renderer>().sharedMaterial
         }, new Mesh[] {
-            _loadingZonePrefab.GetComponent<MeshFilter>().sharedMesh
+            _loadingZones._loadingZonePrefab.GetComponent<MeshFilter>().sharedMesh
         });
 
         List<string> entityMessages = new List<string>();
@@ -142,9 +169,9 @@ public class GameObjectToEntitySkytrain : MonoBehaviour
         entityMessages.Add("Two message");
         entityMessages.Add("Three message");
 
-        for (int i = 0; i < _loadingZoneOffsets.Count; i++)
+        for (int i = 0; i < _loadingZones._loadingZoneOffsets.Count; i++)
         {
-            Vector3 offset = _loadingZoneOffsets[i];
+            Vector3 offset = _loadingZones._loadingZoneOffsets[i];
 
             Entity loadingZoneEntity = _entityManager.CreateEntity(typeof(LocalToWorld));
 
@@ -159,7 +186,7 @@ public class GameObjectToEntitySkytrain : MonoBehaviour
             _entityManager.AddComponentData(loadingZoneEntity, new LocalTransform
             {
                 Position = this.transform.position + this.transform.rotation * offset,
-                Scale = _loadingZoneScale,
+                Scale = _loadingZones._loadingZoneScale,
                 Rotation = this.transform.rotation
             });
 
@@ -217,17 +244,40 @@ public class GameObjectToEntitySkytrain : MonoBehaviour
 
     private void UpdateLoadingZonesTransforms()
     {
-        for (int i = 0; i < _loadingZoneOffsets.Count; i++)
+        for (int i = 0; i < _loadingZones._loadingZoneOffsets.Count; i++)
         {
-            var offset = _loadingZoneOffsets[i];
+            var offset = _loadingZones._loadingZoneOffsets[i];
 
             _entityManager.SetComponentData(_loadingZoneEntities[i], new LocalTransform
             {
                 Position = this.transform.position + this.transform.rotation * offset,
-                Scale = _loadingZoneScale,
+                Scale = _loadingZones._loadingZoneScale,
                 Rotation = this.transform.rotation
             });
         }
             
     }
+}
+
+[System.Serializable]
+public class SkytrainLoadingZoneVariables
+{
+    public GameObject _loadingZonePrefab;
+    public float _loadingZoneScale = 1.0f;
+    public List<Vector3> _loadingZoneOffsets;
+}
+
+[System.Serializable]
+public class SkytrainVisibleSkytrainVariables
+{
+    public bool _createVisibleSkytrainEntity = true;
+    public GameObject _skytrainVisibleEntityPrefab;
+}
+
+[System.Serializable]
+public class SkytrainMotionDetectionVariables
+{
+    public float _movementThreshold = 50;
+    //public float _totalMovement = 0;
+    //public int _currentBufferPosition = 0;
 }
